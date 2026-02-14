@@ -1,0 +1,134 @@
+# Swaad AI — Phased Implementation Plan
+
+> Each phase is buildable, runnable, and testable independently.
+
+---
+
+## Phase 1: Core Foundation
+
+**Goal**: Working Next.js app with data layer, base layout, and design system. Runnable at `localhost:3000`.
+
+| Area | Details |
+|------|---------|
+| Framework | Next.js 14+ App Router, TypeScript strict, Tailwind CSS |
+| Data | Foods.json loaded as typed module, image serving via `public/` |
+| UI | Dark-mode shell with header, navigation (Chat / Menu), responsive layout |
+| Design | shadcn/ui components, Inter font, amber/orange accent palette |
+
+**Files**: project init, `src/types/`, `src/lib/food-data.ts`, `src/lib/utils.ts`, `src/app/layout.tsx`, `src/app/page.tsx`, `src/app/globals.css`, `src/components/layout/header.tsx`
+
+**Test**: `npm run build && npm run dev` → dark-themed shell loads at `localhost:3000` with header and placeholder content.
+
+**Enables**: Phase 2 (data layer + layout ready for AI integration)
+
+---
+
+## Phase 2: AI Integration
+
+**Goal**: Working chat API endpoint. Send a message → get structured AI response with food recommendations.
+
+| Area | Details |
+|------|---------|
+| Model | `gemini-2.0-flash` via LangChain (fast, cheap, structured output) |
+| Agent | `createReactAgent` with function-calling tools |
+| Tools | `search_food`, `get_food_details`, `get_categories`, `add_to_cart`, `remove_from_cart`, `get_cart` |
+| Memory | Buffer last 20 messages per session (in-memory Map) |
+| Output | Structured JSON: `{ blocks: [{ type, data }] }` where type = `text` \| `food_cards` \| `cart_update` \| `checkout` |
+| Safety | Rate limiting (token bucket), retry with backoff, graceful fallback on AI failure |
+
+**Files**: `src/lib/ai/agent.ts`, `src/lib/ai/tools.ts`, `src/lib/ai/prompts.ts`, `src/lib/ai/rate-limiter.ts`, `src/app/api/chat/route.ts`
+
+**Test**: `curl -X POST localhost:3000/api/chat -d '{"message":"show me vegetarian options","sessionId":"test"}'` → returns structured JSON with food items.
+
+**Enables**: Phase 3 (chat API ready for UI consumption)
+
+---
+
+## Phase 3: Dynamic UI Generation
+
+**Goal**: Full chat interface with rich, interactive components rendered from AI responses.
+
+| Area | Details |
+|------|---------|
+| Chat | Message list, input bar, typing indicator, auto-scroll |
+| Components | FoodCard (image + badges + nutrition + price + add button), FoodCardGrid, CartSummary, CheckoutForm |
+| Rendering | MessageRenderer maps `block.type` → React component |
+| State | Zustand chat store (messages, loading, send) |
+| UX | Framer Motion entrance animations, skeleton loading, smooth scroll |
+
+**Files**: `src/stores/chat-store.ts`, `src/components/chat/*` (7 components), update `src/app/page.tsx`
+
+**Test**: Open `localhost:3000` → type "show me chicken dishes" → see animated food cards with images, prices, nutrition badges. Food cards have working add-to-cart buttons (wired in Phase 4).
+
+**Enables**: Phase 4 (UI components ready for cart integration)
+
+---
+
+## Phase 4: Cart & Checkout
+
+**Goal**: Full cart lifecycle — add items via chat or UI buttons, manage cart, complete checkout with COD.
+
+| Area | Details |
+|------|---------|
+| Store | Zustand cart store with localStorage persistence |
+| UI | Cart drawer (slide-out), cart icon with badge, checkout page, order confirmation |
+| Integration | FoodCard add-to-cart → updates store → AI aware of cart state |
+| Checkout | Delivery address form (validated), order summary, Cash on Delivery |
+
+**Files**: `src/stores/cart-store.ts`, `src/components/layout/cart-drawer.tsx`, `src/app/checkout/page.tsx`, `src/app/order-confirmed/page.tsx`, update FoodCard + ChatContainer
+
+**Test**: Chat "add butter chicken" → cart badge updates → open cart drawer → see item → proceed to checkout → fill form → confirm order.
+
+**Enables**: Phase 5 (complete ordering loop ready for polish)
+
+---
+
+## Phase 5: Enhancements
+
+**Goal**: Auth, traditional menu browse, and UX polish.
+
+| Area | Details |
+|------|---------|
+| Auth | Welcome screen (name + email), session via localStorage + cookies |
+| Menu | `/menu` page with category tabs, veg/non-veg filters, search, food detail modal |
+| Polish | Error boundaries, responsive mobile layout, accessibility (ARIA), performance (dynamic imports, image optimization) |
+
+**Files**: `src/stores/user-store.ts`, `src/components/auth/welcome-screen.tsx`, `src/app/menu/page.tsx`, `src/components/menu/*`, error boundary, update layout
+
+**Test**: Fresh visit → welcome screen → enter name → chat loads. Navigate to `/menu` → browse by category → filter veg → click food → see detail modal → add to cart. Test on 375px mobile viewport.
+
+**Enables**: Phase 6 (feature-complete app ready for packaging)
+
+---
+
+## Phase 6: Packaging & Documentation
+
+**Goal**: Production-ready Docker setup, comprehensive README, environment docs.
+
+| Area | Details |
+|------|---------|
+| Docker | Multi-stage Dockerfile (deps → build → runner on node:20-alpine), docker-compose.yml |
+| README | Architecture diagram (Mermaid), decision rationale, setup guide, troubleshooting |
+| Env | `.env.example` with all variables documented |
+| Hardening | Security headers, Next.js config optimization |
+
+**Files**: `Dockerfile`, `docker-compose.yml`, `.env.example`, `.dockerignore`, `README.md`, `next.config.ts` updates
+
+**Test**: `docker compose up --build` → app runs at `localhost:3000` → all features work.
+
+---
+
+## Completion Checklist
+
+- [ ] Core chat + dynamic UI working end-to-end
+- [ ] AI agent handles multi-turn conversations with context
+- [ ] Cart operations via chat and UI buttons
+- [ ] Checkout with COD
+- [ ] Traditional menu browse view
+- [ ] Simple auth (name/email)
+- [ ] Runs in Docker with single command
+- [ ] Mobile responsive
+- [ ] Accessibility basics (ARIA, keyboard nav)
+- [ ] TypeScript strict, no `any`
+- [ ] Error handling + loading states
+- [ ] README with architecture decisions

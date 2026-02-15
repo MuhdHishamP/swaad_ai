@@ -1,4 +1,4 @@
-# 🍛 Swaad AI — Taste Powered by Intelligence
+# 🍛 Swaad AI - Taste Powered by Intelligence
 
 An AI-powered food ordering system built with **Next.js 16**, **TypeScript**, **LangChain**, and **Google Gemini 2.5 Flash**. Chat naturally with an AI assistant to discover, explore, and order from 100+ dishes across Indian cuisines.
 

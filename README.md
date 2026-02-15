@@ -1,6 +1,6 @@
 # 🍛 Swaad AI — Taste Powered by Intelligence
 
-An AI-powered food ordering system built with **Next.js 16**, **TypeScript**, **LangChain**, and **Google Gemini 2.0 Flash**. Chat naturally with an AI assistant to discover, explore, and order from 100+ dishes across Indian cuisines.
+An AI-powered food ordering system built with **Next.js 16**, **TypeScript**, **LangChain**, and **Google Gemini 2.5 Flash**. Chat naturally with an AI assistant to discover, explore, and order from 100+ dishes across Indian cuisines.
 
 ---
 
@@ -8,7 +8,7 @@ An AI-powered food ordering system built with **Next.js 16**, **TypeScript**, **
 
 | Feature | Description |
 |---------|-------------|
-| 🤖 **AI Chat Ordering** | Natural language food discovery via Gemini 2.0 Flash |
+| 🤖 **AI Chat Ordering** | Natural language food discovery via Gemini 2.5 Flash |
 | 🍽️ **Dynamic Food Cards** | Rich cards with images, badges, nutrition info |
 | 🛒 **Persistent Cart** | Zustand + localStorage, survives page refreshes |
 | 📋 **Menu Browse** | Searchable grid with category & dietary filters |
@@ -64,7 +64,7 @@ src/
 ```
 User Message → Chat Store → POST /api/chat → LangChain Agent
                                                   ↓
-                                            Gemini 2.0 Flash
+                                            Gemini 2.5 Flash
                                                   ↓
                                             Tool Calls (search, details, cart)
                                                   ↓
@@ -140,7 +140,7 @@ docker compose up --build
 |-------|-----------|
 | Framework | Next.js 16.1.6 (App Router, Turbopack) |
 | Language | TypeScript 5 (strict mode) |
-| AI | LangChain + Google Gemini 2.0 Flash |
+| AI | LangChain + Google Gemini 2.5 Flash |
 | State | Zustand 5 + localStorage persistence |
 | Styling | Tailwind CSS 4 |
 | Animation | Framer Motion 12 |

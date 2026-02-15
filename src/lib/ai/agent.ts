@@ -2,7 +2,7 @@
 // AI Agent — LangChain + Gemini Integration
 // WHY: createReactAgent from LangGraph gives us a production-grade
 // agent loop with built-in tool calling, error recovery, and
-// message history. Using Gemini 2.0 Flash for its speed, cost
+// message history. Using Gemini 2.5 Flash for its speed, cost
 // efficiency, and strong function-calling capabilities.
 //
 // Architecture Decision: We use an agent (not a chain) because

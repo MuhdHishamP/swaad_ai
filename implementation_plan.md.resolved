@@ -29,7 +29,7 @@
 
 | Area | Details |
 |------|---------|
-| Model | `gemini-2.0-flash` via LangChain (fast, cheap, structured output) |
+| Model | `gemini-2.5-flash` via LangChain (fast, cheap, structured output) |
 | Agent | `createReactAgent` with function-calling tools |
 | Tools | `search_food`, `get_food_details`, `get_categories`, `add_to_cart`, `remove_from_cart`, `get_cart` |
 | Memory | Buffer last 20 messages per session (in-memory Map) |

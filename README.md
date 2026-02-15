@@ -6,9 +6,11 @@ An AI-powered food ordering system built with **Next.js 16**, **TypeScript**, **
 
 ## 🎬 Demo Video
 
-[![Watch the demo](https://cdn.loom.com/sessions/thumbnails/457eaa8421614be69aaf57262f4cc495-with-play.gif)](https://www.loom.com/share/457eaa8421614be69aaf57262f4cc495)
+<a href="https://www.loom.com/share/457eaa8421614be69aaf57262f4cc495" target="_blank">
+  <img src="https://cdn.loom.com/sessions/thumbnails/457eaa8421614be69aaf57262f4cc495-with-play.gif" alt="Watch the demo" />
+</a>
 
-👉 **[Watch the full walkthrough on Loom](https://www.loom.com/share/457eaa8421614be69aaf57262f4cc495)**
+👉 **<a href="https://www.loom.com/share/457eaa8421614be69aaf57262f4cc495" target="_blank">Watch the full walkthrough on Loom</a>**
 
 ---
 

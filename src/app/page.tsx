@@ -1,7 +1,7 @@
 import { ChatContainer } from "@/components/chat/chat-container";
 
 /**
- * Home page — renders the full chat interface.
+ * Home page - renders the full chat interface.
  * WHY: The chat IS the product. The landing page is replaced
  * with the ChatContainer which handles all states:
  * - Empty: shows welcome screen with suggestion chips

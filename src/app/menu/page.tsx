@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import type { FoodItem } from "@/types";
 
 /**
- * Menu Page — Full browsable menu with category filters.
+ * Menu Page - Full browsable menu with category filters.
  * WHY: Not everyone wants to chat. Some users prefer to browse
  * a traditional menu grid. This page uses the same FoodCard
  * component and cart store, maintaining consistency.

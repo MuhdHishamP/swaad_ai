@@ -33,7 +33,7 @@ An AI-powered food ordering system built with **Next.js 16**, **TypeScript**, **
 ```
 src/
 ├── app/
-│   ├── api/chat/route.ts      # POST /api/chat — AI endpoint
+│   ├── api/chat/route.ts      # POST /api/chat - AI endpoint
 │   ├── menu/page.tsx           # Browse menu with filters
 │   ├── layout.tsx              # Root layout + CartDrawer
 │   ├── page.tsx                # Chat interface
@@ -92,7 +92,7 @@ MessageRenderer → FoodCard | MessageBubble | CartSummary
 ### Prerequisites
 
 - **Node.js 20+** and **npm**
-- **Google Gemini API Key** — [Get one free](https://aistudio.google.com/apikey)
+- **Google Gemini API Key** - [Get one free](https://aistudio.google.com/apikey)
 
 ### Local Development
 

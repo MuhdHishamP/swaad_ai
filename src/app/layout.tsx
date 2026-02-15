@@ -11,7 +11,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Swaad AI — Taste Powered by Intelligence",
+  title: "Swaad AI - Taste Powered by Intelligence",
   description:
     "Discover and order delicious food through natural conversations with our AI-powered assistant. Browse 100+ dishes across Indian cuisines.",
   keywords: [
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     "online order",
   ],
   openGraph: {
-    title: "Swaad AI — AI-Powered Food Ordering",
+    title: "Swaad AI - AI-Powered Food Ordering",
     description:
       "Chat with our intelligent assistant to discover and order the perfect meal.",
     type: "website",

@@ -39,6 +39,7 @@ export const searchFoodTool = tool(
       spiceLevel: input.spiceLevel || undefined,
       maxCalories: input.maxCalories || undefined,
       minProtein: input.minProtein || undefined,
+      maxCarbs: input.maxCarbs || undefined,
       maxPrice: input.maxPrice || undefined,
     });
 
@@ -96,6 +97,10 @@ export const searchFoodTool = tool(
         .number()
         .optional()
         .describe("Minimum protein in grams (numeric value, e.g., 20)"),
+      maxCarbs: z
+        .number()
+        .optional()
+        .describe("Maximum carbs in grams (numeric value, e.g., 30). Use this when user wants 'low carb' options."),
       maxPrice: z
         .number()
         .optional()

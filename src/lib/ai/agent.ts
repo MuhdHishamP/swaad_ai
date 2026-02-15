@@ -148,14 +148,16 @@ function extractFoodItemsFromMessages(messages: BaseMessage[]): FoodItem[] {
 }
 
 /**
- * Extracts cart actions from tool results.
+ * Extracts cart actions from tool results, including the full food item data.
  */
 function extractCartActions(
   messages: BaseMessage[]
-): Array<{ action: string; foodId?: number; item?: Record<string, unknown> }> {
+): Array<{ action: string; foodId?: number; foodItem?: FoodItem; quantity?: number; item?: Record<string, unknown> }> {
   const actions: Array<{
     action: string;
     foodId?: number;
+    foodItem?: FoodItem;
+    quantity?: number;
     item?: Record<string, unknown>;
   }> = [];
 
@@ -172,6 +174,8 @@ function extractCartActions(
           actions.push({
             action: "add_to_cart",
             item: parsed.item,
+            foodItem: parsed._foodItem as FoodItem | undefined,
+            quantity: parsed.item?.quantity || 1,
           });
         }
         if (parsed.action === "remove_from_cart" && parsed.success) {
@@ -197,7 +201,8 @@ function extractCartActions(
  */
 function buildResponseBlocks(
   allMessages: BaseMessage[],
-  finalText: string
+  finalText: string,
+  cart?: CartItem[]
 ): MessageBlock[] {
   const blocks: MessageBlock[] = [];
   const foodItems = extractFoodItemsFromMessages(allMessages);
@@ -213,13 +218,31 @@ function buildResponseBlocks(
     blocks.push({ type: "food_cards", items: foodItems });
   }
 
-  // Add cart actions as cart_summary blocks
+  // Add cart action blocks so the frontend can update the cart store
   for (const action of cartActions) {
+    if (action.action === "add_to_cart" && action.foodItem) {
+      blocks.push({
+        type: "cart_action",
+        action: "add",
+        foodItem: action.foodItem,
+        quantity: action.quantity || 1,
+      });
+    }
+    if (action.action === "remove_from_cart" && action.foodId) {
+      blocks.push({
+        type: "cart_action",
+        action: "remove",
+        foodId: action.foodId,
+        quantity: 1,
+      });
+    }
     if (action.action === "show_cart") {
+      const cartItems: CartItem[] = cart || [];
+      const total = cartItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
       blocks.push({
         type: "cart_summary",
-        items: [],
-        total: 0,
+        items: cartItems,
+        total,
       });
     }
   }
@@ -306,7 +329,7 @@ export async function chat(
     // The agent's messages include: [user, ...tool_calls, ...tool_results, final_ai]
     // We need the tool results (messages between user and final AI)
     const allResponseMessages = responseMessages.slice(messages.length);
-    const blocks = buildResponseBlocks(allResponseMessages, finalText);
+    const blocks = buildResponseBlocks(allResponseMessages, finalText, cart);
 
     // Update conversation memory with just the user message and final AI response
     addToHistory(sessionId, [

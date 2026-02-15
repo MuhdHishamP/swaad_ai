@@ -49,6 +49,7 @@ export interface FoodSearchFilters {
   spiceLevel?: string;
   maxCalories?: number;
   minProtein?: number;
+  maxCarbs?: number;
   maxPrice?: number;
   ingredients?: string[];
 }
@@ -115,6 +116,14 @@ export function searchFoods(filters: FoodSearchFilters): FoodItem[] {
     results = results.filter((food) => {
       const protein = parseFloat(food.nutrition.protein) || 0;
       return protein >= minP;
+    });
+  }
+
+  if (filters.maxCarbs) {
+    const maxC = filters.maxCarbs;
+    results = results.filter((food) => {
+      const carbs = parseFloat(food.nutrition.carbs) || 0;
+      return carbs <= maxC;
     });
   }
 

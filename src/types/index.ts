@@ -59,7 +59,8 @@ export type MessageBlockType =
   | "text"
   | "food_cards"
   | "cart_summary"
-  | "checkout_prompt";
+  | "checkout_prompt"
+  | "cart_action";
 
 export interface TextBlock {
   type: "text";
@@ -83,11 +84,20 @@ export interface CheckoutPromptBlock {
   total: number;
 }
 
+export interface CartActionBlock {
+  type: "cart_action";
+  action: "add" | "remove";
+  foodItem?: FoodItem;
+  foodId?: number;
+  quantity: number;
+}
+
 export type MessageBlock =
   | TextBlock
   | FoodCardsBlock
   | CartSummaryBlock
-  | CheckoutPromptBlock;
+  | CheckoutPromptBlock
+  | CartActionBlock;
 
 /** A single message in the conversation */
 export interface Message {

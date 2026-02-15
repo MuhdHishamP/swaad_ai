@@ -2,7 +2,7 @@
 "use client";
 
 import Image from "next/image";
-import { Plus, Minus, Flame, Leaf } from "lucide-react";
+import { Plus, Minus, Flame, Leaf, Sparkles, Check } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn, formatPrice, getFoodImagePath, truncate } from "@/lib/utils";
 import { useCartStore } from "@/stores/cart-store";
@@ -31,6 +31,7 @@ export function FoodCard({ food, onAddToCart, onCardClick, compact = false }: Fo
   const [quantity, setQuantity] = useState(1);
   const [imageError, setImageError] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  const [isAdded, setIsAdded] = useState(false);
   
   const cartItemsCount = useCartStore((s) => s.items.length);
 
@@ -41,14 +42,27 @@ export function FoodCard({ food, onAddToCart, onCardClick, compact = false }: Fo
     }
   }, [cartItemsCount]);
 
+  const handleAdd = () => {
+    if (!onAddToCart) return;
+    
+    // Optimistic UI update
+    setIsAdded(true);
+    onAddToCart(food, quantity);
+
+    // Reset after animation
+    setTimeout(() => {
+      setIsAdded(false);
+    }, 2000);
+  };
+
   const isVeg = food.type === "Vegetarian";
   const imageSrc = getFoodImagePath(food.image);
 
   return (
     <div
       className={cn(
-        "group relative overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--background-secondary)] transition-all hover:border-[var(--border-hover)] flex flex-col",
-        compact ? "w-[260px] shrink-0" : "w-full h-full"
+        "group relative overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--background-secondary)] transition-all duration-300 hover:shadow-lg hover:border-[var(--primary)]/50 flex flex-col",
+        compact ? "w-[260px] shrink-0 snap-center" : "w-full h-full"
       )}
     >
       {/* Food Image */}
@@ -69,32 +83,35 @@ export function FoodCard({ food, onAddToCart, onCardClick, compact = false }: Fo
             alt={food.name}
             fill
             sizes="(max-width: 640px) 260px, 300px"
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
             onError={() => setImageError(true)}
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-4xl">
-            🍛
+          <div className="flex h-full items-center justify-center bg-[var(--background-tertiary)] opacity-50">
+             <div className="text-[var(--foreground-muted)] opacity-20 transform -rotate-12">
+               <Sparkles className="w-16 h-16" />
+             </div>
           </div>
         )}
 
-        {/* Veg/Non-Veg badge — top-left corner */}
+        {/* Veg/Non-Veg badge — Minimalist Icon */}
         <div
           className={cn(
-            "absolute top-2 left-2 flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium backdrop-blur-sm cursor-default",
+            "absolute top-2 left-2 flex h-6 w-6 items-center justify-center rounded-full backdrop-blur-md border shadow-sm",
             isVeg
-              ? "bg-green-500/20 text-green-400 border border-green-500/30"
-              : "bg-red-500/20 text-red-400 border border-red-500/30"
+              ? "bg-green-100/80 border-green-200 text-green-700 dark:bg-green-900/50 dark:border-green-800 dark:text-green-400"
+              : "bg-red-100/80 border-red-200 text-red-700 dark:bg-red-900/50 dark:border-red-800 dark:text-red-400"
           )}
+          title={isVeg ? "Vegetarian" : "Non-Vegetarian"}
         >
-          {isVeg ? <Leaf className="h-3 w-3" /> : <Flame className="h-3 w-3" />}
-          {isVeg ? "Veg" : "Non-Veg"}
+          {isVeg ? <Leaf className="h-3.5 w-3.5" /> : <Flame className="h-3.5 w-3.5" />}
         </div>
 
-        {/* Spice level — top-right */}
+        {/* Spice level — Minimalist with gradient */}
         {food.spiceLevel && food.spiceLevel !== "Neutral" && food.spiceLevel !== "Sweet" && (
-          <div className="absolute top-2 right-2 rounded-md bg-black/60 px-2 py-0.5 text-xs text-[var(--foreground-secondary)] backdrop-blur-sm cursor-default">
-            🌶️ {food.spiceLevel}
+          <div className="absolute top-2 right-2 rounded-full bg-black/40 px-2 py-0.5 text-[10px] font-medium text-white backdrop-blur-md border border-white/10 flex items-center gap-1">
+            <span>🌶️</span>
+            <span>{food.spiceLevel}</span>
           </div>
         )}
       </div>
@@ -103,23 +120,26 @@ export function FoodCard({ food, onAddToCart, onCardClick, compact = false }: Fo
       <div className="p-3 flex flex-col flex-grow space-y-2">
         {/* Name & Category */}
         <div>
-          <h3 className="font-semibold text-sm text-[var(--foreground)] leading-tight">
+          <h3 className="font-semibold text-sm text-[var(--foreground)] leading-tight line-clamp-1" title={food.name}>
             {food.name}
           </h3>
-          <p className="text-xs text-[var(--foreground-muted)] mt-0.5">
+          <p className="text-xs text-[var(--foreground-muted)] mt-0.5 font-medium">
             {food.category}
           </p>
         </div>
 
         {/* Description — collapsed by default, expand on click */}
         {!compact && (
-          <div className="text-xs text-[var(--foreground-secondary)] leading-relaxed">
+          <div className="text-xs text-[var(--foreground-secondary)] leading-relaxed line-clamp-2 min-h-[2.5em]">
             <p>
-              {showDetails ? food.description : truncate(food.description, 100)}
-              {food.description.length > 100 && (
+              {showDetails ? food.description : truncate(food.description, 80)}
+              {food.description.length > 80 && (
                 <button
-                  onClick={() => setShowDetails(!showDetails)}
-                  className="ml-1 text-[var(--primary)] hover:underline cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowDetails(!showDetails);
+                  }}
+                  className="ml-1 text-[var(--primary)] hover:underline cursor-pointer font-medium"
                 >
                   {showDetails ? "less" : "more"}
                 </button>
@@ -145,37 +165,52 @@ export function FoodCard({ food, onAddToCart, onCardClick, compact = false }: Fo
             {formatPrice(food.price)}
           </span>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             {/* Quantity selector */}
             <div className="flex items-center rounded-lg border border-[var(--border)] bg-[var(--background-tertiary)]">
               <button
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="flex h-7 w-7 items-center justify-center text-[var(--foreground-secondary)] hover:text-[var(--foreground)] transition-colors cursor-pointer"
+                className="flex h-9 w-9 items-center justify-center text-[var(--foreground-secondary)] hover:text-[var(--foreground)] transition-colors cursor-pointer active:scale-95"
                 aria-label="Decrease quantity"
               >
-                <Minus className="h-3 w-3" />
+                <Minus className="h-4 w-4" />
               </button>
-              <span className="w-6 text-center text-xs font-medium text-[var(--foreground)]">
+              <span className="w-8 text-center text-sm font-medium text-[var(--foreground)]">
                 {quantity}
               </span>
               <button
                 onClick={() => setQuantity(Math.min(10, quantity + 1))}
-                className="flex h-7 w-7 items-center justify-center text-[var(--foreground-secondary)] hover:text-[var(--foreground)] transition-colors cursor-pointer"
+                className="flex h-9 w-9 items-center justify-center text-[var(--foreground-secondary)] hover:text-[var(--foreground)] transition-colors cursor-pointer active:scale-95"
                 aria-label="Increase quantity"
               >
-                <Plus className="h-3 w-3" />
+                <Plus className="h-4 w-4" />
               </button>
             </div>
 
             {/* Add button */}
             <button
-              onClick={() => onAddToCart?.(food, quantity)}
-              className="flex h-7 items-center gap-1 rounded-lg bg-[var(--primary)] px-3 text-xs font-semibold text-black hover:bg-[var(--primary-hover)] transition-colors cursor-pointer"
+              onClick={handleAdd}
+              disabled={isAdded}
+              className={cn(
+                "flex h-9 items-center gap-1.5 rounded-lg px-4 text-sm font-semibold transition-all cursor-pointer shadow-sm hover:shadow active:scale-95 active:shadow-none min-w-[80px] justify-center",
+                isAdded 
+                  ? "bg-green-500 text-white hover:bg-green-600 border border-green-600"
+                  : "bg-[var(--primary)] text-black hover:bg-[var(--primary-hover)]"
+              )}
               aria-label={`Add ${food.name} to cart`}
               id={`add-to-cart-${food.id}`}
             >
-              <Plus className="h-3 w-3" />
-              Add
+              {isAdded ? (
+                <>
+                  <Check className="h-4 w-4" />
+                  Added
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4" />
+                  Add
+                </>
+              )}
             </button>
           </div>
         </div>

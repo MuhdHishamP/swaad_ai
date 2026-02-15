@@ -29,7 +29,9 @@ export function ChatInput({
     const textarea = textareaRef.current;
     if (textarea) {
       textarea.style.height = "auto";
-      textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
+      if (input) {
+        textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
+      }
     }
   }, [input]);
 
@@ -55,7 +57,7 @@ export function ChatInput({
 
   return (
     <div className="border-t border-[var(--border)] bg-[var(--background)] p-3 sm:p-4">
-      <div className="mx-auto flex max-w-3xl items-end gap-2">
+      <div className="mx-auto flex max-w-3xl flex-nowrap items-center gap-2">
         <div className="relative flex-1">
           <textarea
             ref={textareaRef}
@@ -66,7 +68,7 @@ export function ChatInput({
             disabled={isLoading}
             rows={1}
             className={cn(
-              "w-full resize-none rounded-xl border border-[var(--border)] bg-[var(--background-secondary)] px-4 py-3 pr-12 text-sm text-[var(--foreground)] placeholder:text-[var(--foreground-muted)] overflow-hidden",
+              "w-full resize-none rounded-xl border border-[var(--border)] bg-[var(--background-secondary)] px-4 py-3 pr-12 text-sm text-[var(--foreground)] placeholder:text-[var(--foreground-muted)] placeholder:truncate overflow-hidden",
               "focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent",
               "disabled:opacity-50 disabled:cursor-not-allowed",
               "transition-all"

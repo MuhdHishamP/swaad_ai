@@ -1,8 +1,16 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useCartStore } from "@/stores/cart-store";
 import type { Message } from "@/types";
+
+/**
+ * Module-level set — survives component remounts.
+ * WHY: When useRef was used, navigating away (e.g., checkout → home)
+ * would reset the ref, causing old cart_action blocks to be
+ * re-processed and items to reappear in the cart after clearing.
+ */
+const processedCartActions = new Set<string>();
 
 /**
  * Hook to process cart actions embedded in AI messages.
@@ -11,17 +19,13 @@ import type { Message } from "@/types";
 export function useCartProcessor(messages: Message[]) {
   const addToCart = useCartStore((s) => s.addItem);
   const removeFromCart = useCartStore((s) => s.removeItem);
-  
-  // Track which messages we've already processed for cart actions
-  // to avoid duplicate additions on re-renders
-  const processedCartActions = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     for (const message of messages) {
       if (
         message.role === "assistant" &&
         message.blocks &&
-        !processedCartActions.current.has(message.id)
+        !processedCartActions.has(message.id)
       ) {
         let hasCartAction = false;
         for (const block of message.blocks) {
@@ -35,7 +39,7 @@ export function useCartProcessor(messages: Message[]) {
           }
         }
         if (hasCartAction) {
-          processedCartActions.current.add(message.id);
+          processedCartActions.add(message.id);
         }
       }
     }

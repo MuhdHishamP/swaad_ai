@@ -25,9 +25,9 @@ export function FoodCardGrid({ items, onAddToCart }: FoodCardGridProps) {
     return (
       <div className="w-full overflow-x-auto pb-2 -mx-1 px-1">
         <div className="flex gap-3" style={{ minWidth: "min-content" }}>
-          {items.map((food) => (
+          {items.map((food, index) => (
             <FoodCard
-              key={food.id}
+              key={`${food.id}-${index}`}
               food={food}
               onAddToCart={onAddToCart}
               compact
@@ -40,9 +40,9 @@ export function FoodCardGrid({ items, onAddToCart }: FoodCardGridProps) {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
-      {items.map((food) => (
+      {items.map((food, index) => (
         <FoodCard
-          key={food.id}
+          key={`${food.id}-${index}`}
           food={food}
           onAddToCart={onAddToCart}
         />

@@ -1,10 +1,12 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useCartStore } from "@/stores/cart-store";
 import { cn, formatPrice, getFoodImagePath } from "@/lib/utils";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 /**
  * Cart Drawer — Slide-in panel from the right.
@@ -13,6 +15,7 @@ import { useEffect } from "react";
  * continue chatting without losing their place.
  */
 export function CartDrawer() {
+  const router = useRouter();
   const items = useCartStore((s) => s.items);
   const isOpen = useCartStore((s) => s.isCartOpen);
   const setCartOpen = useCartStore((s) => s.setCartOpen);
@@ -21,6 +24,12 @@ export function CartDrawer() {
   const clearCart = useCartStore((s) => s.clearCart);
   const getTotal = useCartStore((s) => s.getTotal);
   const getItemCount = useCartStore((s) => s.getItemCount);
+  const [mounted, setMounted] = useState(false);
+
+  // Fix hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Close on Escape key
   useEffect(() => {
@@ -66,7 +75,7 @@ export function CartDrawer() {
             <h2 className="text-lg font-semibold text-[var(--foreground)]">
               Your Cart
             </h2>
-            {getItemCount() > 0 && (
+            {mounted && getItemCount() > 0 && (
               <span className="rounded-full bg-[var(--primary)] px-2 py-0.5 text-xs font-bold text-black">
                 {getItemCount()}
               </span>
@@ -82,8 +91,8 @@ export function CartDrawer() {
         </div>
 
         {/* Cart Content */}
-        {items.length === 0 ? (
-          <EmptyCart onClose={() => setCartOpen(false)} />
+        {!mounted || items.length === 0 ? (
+          <EmptyCart onClose={() => setCartOpen(false)} isLoading={!mounted} />
         ) : (
           <>
             {/* Items list */}
@@ -124,8 +133,8 @@ export function CartDrawer() {
               <button
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--primary)] py-3 text-sm font-bold text-black hover:bg-[var(--primary-hover)] transition-colors glow-primary"
                 onClick={() => {
-                  // Phase 5: checkout flow
                   setCartOpen(false);
+                  router.push("/checkout");
                 }}
               >
                 Proceed to Checkout
@@ -219,24 +228,26 @@ function CartItemCard({
 }
 
 /** Empty cart state */
-function EmptyCart({ onClose }: { onClose: () => void }) {
+function EmptyCart({ onClose, isLoading = false }: { onClose: () => void; isLoading?: boolean }) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center px-8 text-center">
       <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--background-secondary)] border border-[var(--border)]">
         <ShoppingBag className="h-8 w-8 text-[var(--foreground-muted)]" />
       </div>
       <h3 className="text-lg font-semibold text-[var(--foreground)] mb-1">
-        Your cart is empty
+        {isLoading ? "Loading your cart..." : "Your cart is empty"}
       </h3>
       <p className="text-sm text-[var(--foreground-secondary)] mb-6">
-        Chat with our AI to discover and add dishes!
+        {isLoading ? "Please wait a moment." : "Chat with our AI to discover and add dishes!"}
       </p>
-      <button
-        onClick={onClose}
-        className="rounded-lg bg-[var(--primary)] px-6 py-2.5 text-sm font-semibold text-black hover:bg-[var(--primary-hover)] transition-colors"
-      >
-        Start Ordering
-      </button>
+      {!isLoading && (
+        <button
+          onClick={onClose}
+          className="rounded-lg bg-[var(--primary)] px-6 py-2.5 text-sm font-semibold text-black hover:bg-[var(--primary-hover)] transition-colors"
+        >
+          Start Ordering
+        </button>
+      )}
     </div>
   );
 }

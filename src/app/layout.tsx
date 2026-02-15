@@ -39,7 +39,6 @@ export default function RootLayout({
       <body className={`${inter.variable} font-sans antialiased`}>
         <Header />
         <CartDrawer />
-        {/* pt-16 offsets the fixed header height */}
         <main className="pt-16 min-h-screen">
           {children}
         </main>

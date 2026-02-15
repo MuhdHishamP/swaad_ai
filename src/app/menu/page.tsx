@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { getAllFoods, getCategories } from "@/lib/food-data";
 import { FoodCard } from "@/components/chat/food-card";
+import { FoodDetailModal } from "@/components/menu/food-detail-modal";
 import { useCartStore } from "@/stores/cart-store";
 import { Search, Filter, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -24,6 +25,7 @@ export default function MenuPage() {
   const [selectedType, setSelectedType] = useState<
     "Vegetarian" | "Non-Vegetarian" | null
   >(null);
+  const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
 
   // Filter foods based on search and filters
   const filteredFoods = useMemo(() => {
@@ -93,6 +95,7 @@ export default function MenuPage() {
               <button
                 onClick={() => setSearchQuery("")}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
+                aria-label="Clear search"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -133,7 +136,7 @@ export default function MenuPage() {
               🍗 Non-Veg
             </button>
 
-            <span className="h-6 w-px bg-[var(--border)] mx-1 self-center" />
+            <span className="h-6 w-px bg-[var(--border)] mx-1 self-center" aria-hidden="true" />
 
             {/* Category filters */}
             {categories.map((cat) => (
@@ -180,6 +183,7 @@ export default function MenuPage() {
                 key={food.id}
                 food={food}
                 onAddToCart={handleAddToCart}
+                onCardClick={() => setSelectedFood(food)}
               />
             ))}
           </div>
@@ -201,6 +205,14 @@ export default function MenuPage() {
           </div>
         )}
       </div>
+
+      {/* Food Detail Modal */}
+      {selectedFood && (
+        <FoodDetailModal
+          food={selectedFood}
+          onClose={() => setSelectedFood(null)}
+        />
+      )}
     </div>
   );
 }

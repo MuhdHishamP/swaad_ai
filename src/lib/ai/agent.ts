@@ -118,7 +118,7 @@ interface AgentResult {
  * Tool results contain _foodItems arrays that we parse out.
  */
 function extractFoodItemsFromMessages(messages: BaseMessage[]): FoodItem[] {
-  const foodItems: FoodItem[] = [];
+  const foodItemMap = new Map<number, FoodItem>();
 
   for (const msg of messages) {
     // Tool messages contain the result JSON
@@ -131,10 +131,12 @@ function extractFoodItemsFromMessages(messages: BaseMessage[]): FoodItem[] {
         const parsed = JSON.parse(content);
 
         if (parsed._foodItems && Array.isArray(parsed._foodItems)) {
-          foodItems.push(...parsed._foodItems);
+          for (const item of parsed._foodItems) {
+            foodItemMap.set(item.id, item);
+          }
         }
         if (parsed._foodItem) {
-          foodItems.push(parsed._foodItem);
+          foodItemMap.set(parsed._foodItem.id, parsed._foodItem);
         }
       } catch {
         // Tool result wasn't JSON or didn't have food items — that's fine
@@ -142,7 +144,7 @@ function extractFoodItemsFromMessages(messages: BaseMessage[]): FoodItem[] {
     }
   }
 
-  return foodItems;
+  return Array.from(foodItemMap.values());
 }
 
 /**

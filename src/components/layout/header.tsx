@@ -1,6 +1,8 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import Link from "next/link";
+import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import {
   MessageSquare,
@@ -20,6 +22,12 @@ export function Header() {
   const pathname = usePathname();
   const toggleCart = useCartStore((s) => s.toggleCart);
   const itemCount = useCartStore((s) => s.getItemCount());
+  const [mounted, setMounted] = useState(false);
+
+  // Fix hydration mismatch: Wait for mount to show cart count from localStorage
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const navItems = [
     {
@@ -91,12 +99,12 @@ export function Header() {
           <button
             onClick={toggleCart}
             className="relative ml-2 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-[var(--foreground-secondary)] hover:text-[var(--foreground)] hover:bg-[var(--background-tertiary)] transition-all"
-            aria-label={`Open cart${itemCount > 0 ? `, ${itemCount} items` : ""}`}
+            aria-label={`Open cart${mounted && itemCount > 0 ? `, ${itemCount} items` : ""}`}
             id="cart-button"
           >
             <ShoppingCart className="h-4 w-4" />
             <span className="hidden sm:inline">Cart</span>
-            {itemCount > 0 && (
+            {mounted && itemCount > 0 && (
               <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--primary)] text-[10px] font-bold text-black">
                 {itemCount > 9 ? "9+" : itemCount}
               </span>

@@ -53,10 +53,27 @@ export function MessageBubble({ message }: MessageBubbleProps) {
  * Basic text formatting for assistant messages.
  * Handles: bold (**text**), bullet points, and monetary values.
  */
-function formatMessageText(text: string): string {
+function formatMessageText(text: string): React.ReactNode {
   // Clean up any trailing/leading whitespace per line
-  return text
-    .split("\n")
-    .map((line) => line.trimEnd())
-    .join("\n");
+  const lines = text.split("\n").map((line) => line.trimEnd());
+
+  return lines.map((line, lineIdx) => {
+    // Basic bold parsing: **text**
+    const parts = line.split(/(\*\*.*?\*\*)/g);
+    
+    return (
+      <div key={lineIdx}>
+        {parts.map((part, partIdx) => {
+          if (part.startsWith("**") && part.endsWith("**")) {
+            return (
+              <strong key={partIdx} className="font-bold">
+                {part.slice(2, -2)}
+              </strong>
+            );
+          }
+          return part;
+        })}
+      </div>
+    );
+  });
 }

@@ -66,7 +66,7 @@ export function ChatInput({
             disabled={isLoading}
             rows={1}
             className={cn(
-              "w-full resize-none rounded-xl border border-[var(--border)] bg-[var(--background-secondary)] px-4 py-3 pr-12 text-sm text-[var(--foreground)] placeholder:text-[var(--foreground-muted)]",
+              "w-full resize-none rounded-xl border border-[var(--border)] bg-[var(--background-secondary)] px-4 py-3 pr-12 text-sm text-[var(--foreground)] placeholder:text-[var(--foreground-muted)] overflow-hidden",
               "focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent",
               "disabled:opacity-50 disabled:cursor-not-allowed",
               "transition-all"

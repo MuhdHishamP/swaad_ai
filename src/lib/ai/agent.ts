@@ -43,7 +43,7 @@ import type { FoodItem, MessageBlock, CartItem } from "@/types";
 // ============================================================
 
 const MAX_HISTORY = 20;
-const ENABLE_JSON_UI = process.env.ENABLE_JSON_UI === "true";
+const ENABLE_JSON_UI = true;
 const conversationMemory = new Map<string, BaseMessage[]>();
 
 function getHistory(sessionId: string): BaseMessage[] {

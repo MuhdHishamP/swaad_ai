@@ -96,12 +96,7 @@ MessageRenderer → FoodCard | MessageBubble | CartSummary | JsonUiRenderer
 ## 🧩 Generative JSON UI
 
 `json_ui` is an additive block type for supplemental visuals (promo banners, short tips, compact summaries).  
-It is **feature-flagged** and **server-validated** before rendering.
-
-### Feature Flag
-
-- `ENABLE_JSON_UI=false` by default
-- Set `ENABLE_JSON_UI=true` in `.env.local` to enable
+It is always enabled and **server-validated** before rendering.
 
 ### Allowed Components (v1)
 
@@ -192,7 +187,6 @@ docker compose up --build
 |----------|----------|-------------|
 | `GOOGLE_API_KEY` | ✅ | Google Gemini API key |
 | `GOOGLE_GEMINI_MODEL` | No | Gemini model name (default: `gemini-2.5-flash`) |
-| `ENABLE_JSON_UI` | No | Enables validated `json_ui` block rendering (`false` by default) |
 | `NODE_ENV` | No | Default: `development` |
 | `NEXT_PUBLIC_APP_URL` | No | Default: `http://localhost:3000` |
 
@@ -216,14 +210,13 @@ Suggested verification for JSON UI changes:
 
 ## 🚦 Rollout Checklist (`json_ui`)
 
-1. Keep `ENABLE_JSON_UI=false` in shared/default environments.
-2. Enable in local/dev only and verify:
+1. Verify in local/dev:
    - Existing food recommendation cards unchanged
    - Cart add/remove/show-cart unchanged
    - Valid `json_ui` payload renders
    - Invalid payload safely falls back (no crash)
-3. Monitor logs for validation rejections/acceptance rates.
-4. Gradually enable in higher environments after stable behavior.
+2. Monitor logs for validation rejections/acceptance rates.
+3. Promote to higher environments after stable behavior.
 
 Manual QA scenarios for clickable actions:
 1. Trigger welcome card and click `North Indian`/`South Indian`/`Street Food`:

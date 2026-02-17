@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { getAllFoods, getCategories } from "@/lib/food-data";
 import { FoodCard } from "@/components/chat/food-card";
@@ -17,6 +17,22 @@ import type { FoodItem } from "@/types";
  * component and cart store, maintaining consistency.
  */
 export default function MenuPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen px-4 py-6 sm:px-6">
+          <div className="mx-auto max-w-7xl">
+            <p className="text-sm text-[var(--foreground-muted)]">Loading menu...</p>
+          </div>
+        </div>
+      }
+    >
+      <MenuContent />
+    </Suspense>
+  );
+}
+
+function MenuContent() {
   const allFoods = useMemo(() => getAllFoods(), []);
   const categories = useMemo(() => getCategories(), []);
   const searchParams = useSearchParams();

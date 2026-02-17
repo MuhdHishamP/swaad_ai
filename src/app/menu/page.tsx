@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { getAllFoods, getCategories } from "@/lib/food-data";
 import { FoodCard } from "@/components/chat/food-card";
 import { FoodDetailModal } from "@/components/menu/food-detail-modal";
@@ -18,14 +19,33 @@ import type { FoodItem } from "@/types";
 export default function MenuPage() {
   const allFoods = useMemo(() => getAllFoods(), []);
   const categories = useMemo(() => getCategories(), []);
+  const searchParams = useSearchParams();
   const addToCart = useCartStore((s) => s.addItem);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  // undefined => follow URL query param; null => explicitly cleared by user
+  const [selectedCategoryOverride, setSelectedCategoryOverride] = useState<
+    string | null | undefined
+  >(undefined);
   const [selectedType, setSelectedType] = useState<
     "Vegetarian" | "Non-Vegetarian" | null
   >(null);
   const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
+
+  const categoryFromQuery = useMemo(() => {
+    const categoryParam = searchParams.get("category");
+    if (!categoryParam) return null;
+    return (
+      categories.find(
+        (category) => category.toLowerCase() === categoryParam.toLowerCase()
+      ) || null
+    );
+  }, [searchParams, categories]);
+
+  const selectedCategory =
+    selectedCategoryOverride === undefined
+      ? categoryFromQuery
+      : selectedCategoryOverride;
 
   // Filter foods based on search and filters
   const filteredFoods = useMemo(() => {
@@ -59,7 +79,7 @@ export default function MenuPage() {
 
   const clearFilters = () => {
     setSearchQuery("");
-    setSelectedCategory(null);
+    setSelectedCategoryOverride(null);
     setSelectedType(null);
   };
 
@@ -143,7 +163,7 @@ export default function MenuPage() {
               <button
                 key={cat}
                 onClick={() =>
-                  setSelectedCategory(selectedCategory === cat ? null : cat)
+                  setSelectedCategoryOverride(selectedCategory === cat ? null : cat)
                 }
                 className={cn(
                   "rounded-full px-3 py-1.5 text-xs font-medium border transition-all",

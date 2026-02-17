@@ -60,7 +60,8 @@ export type MessageBlockType =
   | "food_cards"
   | "cart_summary"
   | "checkout_prompt"
-  | "cart_action";
+  | "cart_action"
+  | "json_ui";
 
 export interface TextBlock {
   type: "text";
@@ -92,12 +93,32 @@ export interface CartActionBlock {
   quantity: number;
 }
 
+export interface JsonUiNode {
+  component: string;
+  props?: Record<string, unknown>;
+  children?: JsonUiNode[];
+}
+
+/**
+ * Generic JSON UI block for dynamic, schema-driven rendering.
+ * The schema shape will be strictly validated server-side before
+ * this block is returned to the client.
+ */
+export interface JsonUiBlock {
+  type: "json_ui";
+  schema: {
+    version: string;
+    root: JsonUiNode;
+  };
+}
+
 export type MessageBlock =
   | TextBlock
   | FoodCardsBlock
   | CartSummaryBlock
   | CheckoutPromptBlock
-  | CartActionBlock;
+  | CartActionBlock
+  | JsonUiBlock;
 
 /** A single message in the conversation */
 export interface Message {

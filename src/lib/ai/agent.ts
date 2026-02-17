@@ -21,6 +21,13 @@ import {
 } from "@langchain/core/messages";
 import { agentTools } from "./tools";
 import { buildSystemPrompt } from "./prompts";
+import { validateJsonUiSchema } from "./json-ui-schema";
+import { logJsonUiValidation } from "./ui-logging";
+import {
+  buildChefChoiceJsonUi,
+  buildDietarySafetyJsonUi,
+  buildWelcomeJsonUi,
+} from "./json-ui-builders";
 import type { FoodItem, MessageBlock, CartItem } from "@/types";
 
 // ============================================================
@@ -36,6 +43,7 @@ import type { FoodItem, MessageBlock, CartItem } from "@/types";
 // ============================================================
 
 const MAX_HISTORY = 20;
+const ENABLE_JSON_UI = process.env.ENABLE_JSON_UI === "true";
 const conversationMemory = new Map<string, BaseMessage[]>();
 
 function getHistory(sessionId: string): BaseMessage[] {
@@ -111,6 +119,12 @@ function getAgent() {
 interface AgentResult {
   blocks: MessageBlock[];
   textContent: string;
+}
+
+interface TriggerIntents {
+  welcome: boolean;
+  surpriseOrRecommendation: boolean;
+  dietarySafety: boolean;
 }
 
 /**
@@ -197,16 +211,128 @@ function extractCartActions(
 }
 
 /**
+ * Extract candidate JSON UI payloads from tool messages.
+ * Tools may include one of: _uiSchema, uiSchema, or json_ui.
+ */
+function extractJsonUiCandidatesFromMessages(messages: BaseMessage[]): unknown[] {
+  const candidates: unknown[] = [];
+
+  for (const msg of messages) {
+    if (msg._getType() !== "tool") continue;
+
+    try {
+      const content =
+        typeof msg.content === "string"
+          ? msg.content
+          : JSON.stringify(msg.content);
+      const parsed = JSON.parse(content) as Record<string, unknown>;
+
+      const candidate =
+        parsed._uiSchema ??
+        parsed.uiSchema ??
+        parsed.json_ui ??
+        null;
+
+      if (candidate) {
+        candidates.push(candidate);
+      }
+    } catch {
+      // Ignore non-JSON tool content
+    }
+  }
+
+  return candidates;
+}
+
+/**
+ * Extracts inline JSON UI payloads from assistant text.
+ * Supported markers:
+ * - <json_ui>{...}</json_ui>
+ * - ```json_ui ... ```
+ */
+function extractInlineJsonUiFromText(text: string): {
+  sanitizedText: string;
+  candidates: unknown[];
+} {
+  const candidates: unknown[] = [];
+  let sanitizedText = text;
+
+  const collectMatches = (pattern: RegExp) => {
+    const matches = [...sanitizedText.matchAll(pattern)];
+    for (const match of matches) {
+      const payload = match[1]?.trim();
+      if (!payload) continue;
+      try {
+        candidates.push(JSON.parse(payload));
+      } catch {
+        // Ignore invalid JSON snippets; validator/fallback handles UI safely.
+      }
+    }
+    sanitizedText = sanitizedText.replace(pattern, "").trim();
+  };
+
+  collectMatches(/<json_ui>\s*([\s\S]*?)\s*<\/json_ui>/gi);
+  collectMatches(/```json_ui\s*([\s\S]*?)```/gi);
+
+  return { sanitizedText, candidates };
+}
+
+function detectTriggerIntents(userMessage: string, history: BaseMessage[]): TriggerIntents {
+  const normalized = userMessage.toLowerCase();
+  const isFirstTurn = history.length === 0;
+
+  return {
+    welcome:
+      isFirstTurn ||
+      /\b(new here|first time|new user|just joined|first order)\b/i.test(normalized),
+    surpriseOrRecommendation:
+      /\b(surprise me|surprise|recommendation|recommend|suggest|chef'?s choice)\b/i.test(
+        normalized
+      ),
+    dietarySafety:
+      /\b(allerg|allergy|allergic|peanut|nut[- ]?free|shellfish|gluten[- ]?free|dairy[- ]?free|lactose)\b/i.test(
+        normalized
+      ),
+  };
+}
+
+function hasJsonUiMarker(blocks: MessageBlock[], marker: string): boolean {
+  return blocks.some(
+    (block) =>
+      block.type === "json_ui" &&
+      JSON.stringify(block.schema).toLowerCase().includes(marker.toLowerCase())
+  );
+}
+
+function selectChefChoiceFood(blocks: MessageBlock[]): FoodItem | undefined {
+  const foodCardsBlock = blocks.find((block) => block.type === "food_cards");
+  if (!foodCardsBlock || foodCardsBlock.type !== "food_cards") return undefined;
+  return foodCardsBlock.items[0];
+}
+
+/**
  * Processes the agent's response into structured blocks.
  */
 function buildResponseBlocks(
   allMessages: BaseMessage[],
   finalText: string,
-  cart?: CartItem[]
+  userMessage: string,
+  history: BaseMessage[],
+  cart?: CartItem[],
+  inlineJsonUiCandidates: unknown[] = [],
+  options?: { enableJsonUi?: boolean }
 ): MessageBlock[] {
   const blocks: MessageBlock[] = [];
   const foodItems = extractFoodItemsFromMessages(allMessages);
   const cartActions = extractCartActions(allMessages);
+  const jsonUiEnabled = options?.enableJsonUi ?? ENABLE_JSON_UI;
+  const triggerIntents = detectTriggerIntents(userMessage, history);
+  const jsonUiCandidates = jsonUiEnabled
+    ? [
+        ...extractJsonUiCandidatesFromMessages(allMessages),
+        ...inlineJsonUiCandidates,
+      ]
+    : [];
 
   // Add text block if agent produced a text response
   if (finalText.trim()) {
@@ -216,6 +342,55 @@ function buildResponseBlocks(
   // Add food cards block if items were found
   if (foodItems.length > 0) {
     blocks.push({ type: "food_cards", items: foodItems });
+  }
+
+  // Add validated generative UI blocks when feature is enabled
+  for (const candidate of jsonUiCandidates) {
+    const validation = validateJsonUiSchema(candidate);
+    if (!validation.ok) {
+      logJsonUiValidation({
+        accepted: false,
+        reason: "schema_validation_failed",
+        issueCount: validation.issues.length,
+        issues: validation.issues,
+      });
+      continue;
+    }
+
+    logJsonUiValidation({ accepted: true });
+    blocks.push({
+      type: "json_ui",
+      schema: validation.data,
+    });
+  }
+
+  if (jsonUiEnabled) {
+    if (triggerIntents.welcome && !hasJsonUiMarker(blocks, "welcome to swaad")) {
+      blocks.push({
+        type: "json_ui",
+        schema: buildWelcomeJsonUi(),
+      });
+      logJsonUiValidation({ accepted: true, reason: "trigger_welcome" });
+    }
+
+    if (triggerIntents.surpriseOrRecommendation && !hasJsonUiMarker(blocks, "chef's choice")) {
+      const chefChoiceFood = selectChefChoiceFood(blocks);
+      if (chefChoiceFood) {
+        blocks.push({
+          type: "json_ui",
+          schema: buildChefChoiceJsonUi(chefChoiceFood),
+        });
+        logJsonUiValidation({ accepted: true, reason: "trigger_chef_choice" });
+      }
+    }
+
+    if (triggerIntents.dietarySafety && !hasJsonUiMarker(blocks, "allergy safety check")) {
+      blocks.push({
+        type: "json_ui",
+        schema: buildDietarySafetyJsonUi(userMessage),
+      });
+      logJsonUiValidation({ accepted: true, reason: "trigger_allergy_warning" });
+    }
   }
 
   // Add cart action blocks so the frontend can update the cart store
@@ -325,21 +500,32 @@ export async function chat(
         .join("\n");
     }
 
+    const inlineUi = ENABLE_JSON_UI
+      ? extractInlineJsonUiFromText(finalText)
+      : { sanitizedText: finalText, candidates: [] as unknown[] };
+
     // Extract tool results from intermediate messages
     // The agent's messages include: [user, ...tool_calls, ...tool_results, final_ai]
     // We need the tool results (messages between user and final AI)
     const allResponseMessages = responseMessages.slice(messages.length);
-    const blocks = buildResponseBlocks(allResponseMessages, finalText, cart);
+    const blocks = buildResponseBlocks(
+      allResponseMessages,
+      inlineUi.sanitizedText,
+      message,
+      history,
+      cart,
+      inlineUi.candidates
+    );
 
     // Update conversation memory with just the user message and final AI response
     addToHistory(sessionId, [
       new HumanMessage(message),
-      new AIMessage(finalText),
+      new AIMessage(inlineUi.sanitizedText),
     ]);
 
     return {
       blocks,
-      textContent: finalText,
+      textContent: inlineUi.sanitizedText,
     };
   } catch (error) {
     console.error("[AI Agent Error]", error);
@@ -356,3 +542,11 @@ export async function chat(
     };
   }
 }
+
+export const __agentTestHooks = {
+  extractInlineJsonUiFromText,
+  extractJsonUiCandidatesFromMessages,
+  detectTriggerIntents,
+  hasJsonUiMarker,
+  buildResponseBlocks,
+};

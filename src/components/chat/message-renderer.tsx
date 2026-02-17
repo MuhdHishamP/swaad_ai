@@ -3,6 +3,7 @@
 import { MessageBubble } from "./message-bubble";
 import { FoodCardGrid } from "./food-card-grid";
 import { CartSummaryCard } from "./cart-summary";
+import { JsonUiRenderer } from "@/components/json-ui/json-ui-renderer";
 import type { Message, MessageBlock, FoodItem } from "@/types";
 
 interface MessageRendererProps {
@@ -104,6 +105,13 @@ function BlockRenderer({
       return (
         <div className="pl-11">
           <CartSummaryCard items={block.items} total={block.total} />
+        </div>
+      );
+
+    case "json_ui":
+      return (
+        <div className="pl-11">
+          <JsonUiRenderer schema={block.schema} />
         </div>
       );
 

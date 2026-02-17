@@ -28,15 +28,20 @@ export function ChatContainer() {
   const addToCart = useCartStore((s) => s.addItem);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [showScrollButton, setShowScrollButton] = useState(false);
+  const messageRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const scrollModeRef = useRef<"bottom" | "anchor-user">("bottom");
+  const anchorMessageIdRef = useRef<string | null>(null);
+  const lastProcessedMessageIdRef = useRef<string | null>(null);
   const [userScrolledUp, setUserScrolledUp] = useState(false);
+  const showScrollButton = userScrolledUp && messages.length > 0;
   
   // Custom hook to handle cart actions (add/remove) from AI messages
   useCartProcessor(messages);
 
   const scrollToBottom = () => {
+    scrollModeRef.current = "bottom";
+    anchorMessageIdRef.current = null;
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    setShowScrollButton(false);
     setUserScrolledUp(false);
   };
 
@@ -48,22 +53,64 @@ export function ChatContainer() {
     const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
     
     if (isNearBottom) {
-      setShowScrollButton(false);
+      scrollModeRef.current = "bottom";
+      anchorMessageIdRef.current = null;
       setUserScrolledUp(false);
     } else {
       setUserScrolledUp(true);
     }
   };
 
-  // Auto-scroll logic: only if user hasn't manually scrolled up
+  // Detect new user message and switch to "anchor-user" mode.
   useEffect(() => {
+    if (messages.length === 0) {
+      scrollModeRef.current = "bottom";
+      anchorMessageIdRef.current = null;
+      lastProcessedMessageIdRef.current = null;
+      return;
+    }
+
+    const lastMessage = messages[messages.length - 1];
+    if (lastProcessedMessageIdRef.current === lastMessage.id) return;
+
+    lastProcessedMessageIdRef.current = lastMessage.id;
+    if (lastMessage.role === "user") {
+      scrollModeRef.current = "anchor-user";
+      anchorMessageIdRef.current = lastMessage.id;
+    }
+  }, [messages]);
+
+  // Bottom mode: normal auto-scroll to latest message.
+  useEffect(() => {
+    if (scrollModeRef.current !== "bottom") return;
     if (!userScrolledUp) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    } else if (messages.length > 0) {
-      // If new message arrives and user is scrolled up, show button
-      setShowScrollButton(true);
     }
   }, [messages, isLoading, userScrolledUp]);
+
+  // Anchor mode: place the latest user message near top, with assistant content below.
+  useEffect(() => {
+    if (scrollModeRef.current !== "anchor-user") return;
+    const anchorId = anchorMessageIdRef.current;
+    if (!anchorId) return;
+
+    const container = scrollContainerRef.current;
+    const anchorEl = messageRefs.current[anchorId];
+    if (!container || !anchorEl) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      const containerRect = container.getBoundingClientRect();
+      const anchorRect = anchorEl.getBoundingClientRect();
+      const anchorTop = anchorRect.top - containerRect.top + container.scrollTop;
+      const anchorOffset = window.innerWidth < 768 ? 24 : 12;
+      container.scrollTo({
+        top: Math.max(anchorTop - anchorOffset, 0),
+        behavior: "smooth",
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [messages, isLoading]);
 
   const cartItems = useCartStore((s) => s.items);
 
@@ -103,11 +150,18 @@ export function ChatContainer() {
           ) : (
             <>
               {messages.map((message) => (
-                <MessageRenderer
+                <div
                   key={message.id}
-                  message={message}
-                  onAddToCart={handleAddToCart}
-                />
+                  ref={(el) => {
+                    messageRefs.current[message.id] = el;
+                  }}
+                  data-message-id={message.id}
+                >
+                  <MessageRenderer
+                    message={message}
+                    onAddToCart={handleAddToCart}
+                  />
+                </div>
               ))}
               {isLoading && (
                 <div className="pl-11 space-y-2 animate-fade-in-up">
@@ -116,9 +170,19 @@ export function ChatContainer() {
                     <TypingIndicator />
                     <span>Finding the best options...</span>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-[80%]">
-                    <FoodCardSkeleton />
-                    <FoodCardSkeleton />
+                  <div
+                    className="flex w-full max-w-[80%] overflow-x-auto snap-x snap-mandatory gap-4 scroll-smooth overscroll-x-contain pb-2 -mx-4 px-4 md:mx-0 md:px-0"
+                    aria-label="Loading recommended dishes"
+                  >
+                    <div className="snap-start shrink-0 w-[280px] md:w-[320px]">
+                      <FoodCardSkeleton />
+                    </div>
+                    <div className="snap-start shrink-0 w-[280px] md:w-[320px]">
+                      <FoodCardSkeleton />
+                    </div>
+                    <div className="snap-start shrink-0 w-[280px] md:w-[320px]">
+                      <FoodCardSkeleton />
+                    </div>
                   </div>
                 </div>
               )}

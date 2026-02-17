@@ -74,6 +74,7 @@ button {
 /* Custom scrollbar — subtle, doesn't compete with content */
 ::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -87,6 +88,15 @@ button {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--border-hover);
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* ============================================================
